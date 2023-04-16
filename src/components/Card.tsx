@@ -2,9 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useSwipeable, SwipeEventData } from "react-swipeable";
 import Image from "next/image";
 
-import CardContent from "./CardContent";
+import CardContent from "@/components/CardContent";
 
-import { CardProps } from "./types";
+import { CardProps } from "@/types";
 
 
 const Card = ({
@@ -27,7 +27,6 @@ const Card = ({
     
     const rotation = maxRotation * percentage;
 
-    //console.log(percentage, deltaX)
     setRotateDeg(deltaX < 0 ? -rotation : rotation);
   };
 
@@ -44,10 +43,6 @@ const Card = ({
       vxvy,           // [ deltaX/time, deltaY/time] - velocity per axis
       dir,            // direction of swipe (Left|Right|Up|Down)
     } = eventData;
-
-    //console.log(eventData)
-
-
     handleRotation(deltaX)
   }
 
@@ -61,7 +56,7 @@ const Card = ({
 
     preventScrollOnSwipe: true,
     //swipeDuration: 100,
-    trackMouse: true,
+    //trackMouse: true,
     delta: 50,
   });                            
   return (

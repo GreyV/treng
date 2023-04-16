@@ -53,11 +53,4 @@ export default function IndexPage() {
     </>
   );
 }
-/* <a
-            href="/about"
-            className={styles.card}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            About us
-          </a> */
+
