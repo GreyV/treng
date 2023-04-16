@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import Card from './Card'
+import Card from '@/components/Card'
 
-import { CardData, Props, SwipeEventData } from "./types";
+import { CardData, Props, SwipeEventData } from "@/types";
 
 const SwipeableCards = ({ data, onSwipeLeft, onSwipeRight }: Props) => {
   const [cards, setCards] = useState<CardData[]>(data);
