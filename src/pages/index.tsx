@@ -22,12 +22,12 @@ const cards: CardData[] = [
 
 const inter = Inter({ subsets: ["latin"] });
 
-const handleSwipeLeft = () => {
-  console.log("Left!")
+const handleSwipeLeft = (id: string) => {
+  console.log("Again:", id);
 };
 
-const handleSwipeRight = () => {
-  console.log("Right!")
+const handleSwipeRight = (id: string) => {
+  console.log("Know:", id);
 };
 
 export default function IndexPage() {
@@ -45,7 +45,7 @@ export default function IndexPage() {
             <h2 className={inter.className}>Treng 😋</h2>
             <p className="text-gray-500">Learn English easy!</p>
           </div>
-          <div className="grow h-14">
+          <div className="grow pt-4">
             <SwipeableCards data={cards} onSwipeLeft={handleSwipeLeft} onSwipeRight={handleSwipeRight}/>
           </div>
         </div>

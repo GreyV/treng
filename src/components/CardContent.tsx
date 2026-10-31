@@ -4,7 +4,7 @@ interface CardContentProps {
 
 const CardContent = ({ text }: CardContentProps) => {
   return (
-    <div className="card-content font-sans text-2xl text-center text-cyan-50 relative z-10">
+    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent px-6 pb-6 pt-16 text-center font-sans text-3xl font-bold tracking-wide text-white">
       <p>{text}</p>
     </div>
   );
