@@ -6,9 +6,8 @@ import { CardData, CardHandle, Props, SwipeDirection } from "@/types";
 
 // How many cards are rendered as a stack (the rest stay out of the DOM).
 const VISIBLE_CARDS = 3;
-// A word swiped left comes back after this many other cards.
-const REQUEUE_GAP = 3;
-const MAX_HISTORY = 50;
+// How many swipes can be undone.
+export const MAX_HISTORY = 50;
 
 // A card can be in the deck more than once over time (each time it is missed),
 // so every appearance gets its own key and therefore a fresh component.
@@ -26,7 +25,14 @@ interface HistoryItem {
 const toEntries = (data: CardData[]): Entry[] =>
   data.map((card) => ({ card, key: `${card.id}:0` }));
 
-const SwipeableCards = ({ data, onSwipeLeft, onSwipeRight }: Props) => {
+const SwipeableCards = ({
+  data,
+  requeueGap = 3,
+  onSwipeLeft,
+  onSwipeRight,
+  onUndo,
+  emptyState,
+}: Props) => {
   const [queue, setQueue] = useState(() => toEntries(data));
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [returning, setReturning] = useState<{ key: string; dir: SwipeDirection } | null>(null);
@@ -58,7 +64,7 @@ const SwipeableCards = ({ data, onSwipeLeft, onSwipeRight }: Props) => {
       onSwipeLeft?.(top.card.id);
       round.current += 1;
       const again = { card: top.card, key: `${top.card.id}:${round.current}` };
-      setQueue([...rest.slice(0, REQUEUE_GAP), again, ...rest.slice(REQUEUE_GAP)]);
+      setQueue([...rest.slice(0, requeueGap), again, ...rest.slice(requeueGap)]);
     }
   };
 
@@ -74,6 +80,8 @@ const SwipeableCards = ({ data, onSwipeLeft, onSwipeRight }: Props) => {
     setHistory((prev) => prev.slice(0, -1));
     setQueue(last.queue);
     setReturning({ key: last.key, dir: last.dir });
+    // The queue saved before the swipe starts with the swiped card.
+    onUndo?.(last.queue[0].card.id, last.dir);
   };
 
   const restart = () => {
@@ -118,6 +126,8 @@ const SwipeableCards = ({ data, onSwipeLeft, onSwipeRight }: Props) => {
               />
             ))
             .reverse()
+        ) : emptyState ? (
+          emptyState
         ) : (
           <div className="flex h-full flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed border-gray-300 text-center">
             <p className="text-xl text-gray-500">All words learned! 🎉</p>
