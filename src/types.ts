@@ -1,9 +1,16 @@
 import type { ReactNode } from "react";
 
+import type { Level } from "@/lib/store";
+
 export interface CardData {
+  /** Stable: progress is saved by id. */
   id: string;
   image: string;
   text: string;
+  /** Part of speech: "noun", "verb", "adjective"… */
+  pos: string;
+  /** CEFR level of the word, A1–C1. */
+  level: Level;
 }
 
 export type SwipeDirection = "left" | "right";

@@ -130,7 +130,7 @@ const Card = ({ card, depth, enterFrom, onLeave, onSwiped, ref }: CardProps) => 
           AGAIN
         </motion.span>
 
-        <CardContent text={card.text} />
+        <CardContent text={card.text} pos={card.pos} level={card.level} />
       </motion.div>
     </motion.div>
   );

@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "import:oxford": "node scripts/import-oxford.mjs"
   },
   "dependencies": {
     "motion": "^14.14.0",

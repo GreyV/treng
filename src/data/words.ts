@@ -1,14 +1,18 @@
+// The Oxford 3000 and 5000 word lists, built by scripts/import-oxford.mjs.
+import type { Level } from "@/lib/store";
 import { CardData } from "@/types";
 
-export const WORDS: CardData[] = [
-  { id: "1", image: "https://picsum.photos/id/688/400/600", text: "ADMIRE" },
-  { id: "2", image: "https://picsum.photos/id/898/400/600", text: "ANXIOUS" },
-  { id: "3", image: "https://picsum.photos/id/1050/400/600", text: "BORROW" },
-  { id: "4", image: "https://picsum.photos/id/901/400/600", text: "CAMPSITE" },
-  { id: "5", image: "https://picsum.photos/id/353/400/600", text: "DESPITE" },
-  { id: "6", image: "https://picsum.photos/id/419/400/600", text: "EFFICIENT" },
-  { id: "7", image: "https://picsum.photos/id/743/400/600", text: "ESSENTIAL" },
-  { id: "8", image: "https://picsum.photos/id/859/400/600", text: "EXHAUSTED" },
-  { id: "9", image: "https://picsum.photos/id/879/400/600", text: "FERRY" },
-  { id: "10", image: "https://picsum.photos/id/184/400/600", text: "RUBBER" },
-];
+import oxford from "./oxford.json";
+
+interface OxfordWord {
+  id: string;
+  text: string;
+  pos: string;
+  level: Level;
+}
+
+export const WORDS: CardData[] = (oxford as OxfordWord[]).map((word) => ({
+  ...word,
+  // Placeholder: a random photo, the same one for a word every time.
+  image: `https://picsum.photos/seed/${encodeURIComponent(word.id)}/400/600`,
+}));

@@ -2,7 +2,7 @@
 
 A mobile-first web app for learning English vocabulary with swipeable flashcards. Each card shows a picture and a word; swipe right if you know the word, or left to see it again a few cards later.
 
-> **Status:** early prototype. The word list is hard-coded, progress is saved only in the browser, and there are no translations yet.
+> **Status:** early prototype. Words come from the Oxford 3000 and 5000 lists, pictures are random placeholders, progress is saved only in the browser, and there are no translations yet.
 
 ## Tech stack
 
@@ -30,6 +30,7 @@ Open [http://localhost:3000](http://localhost:3000). Swiping is touch-only for n
 | `npm run build` | Build for production                 |
 | `npm run start` | Serve the production build           |
 | `npm run lint`  | Run ESLint                           |
+| `npm run import:oxford` | Rebuild the word list from the Oxford site |
 
 ## Project structure
 
@@ -41,7 +42,9 @@ src/
 │   ├── CardContent.tsx      # The word shown over the image
 │   ├── Layout.tsx           # Header with navigation, wraps every page
 │   └── account/             # Account tabs: progress, words, settings, profile
-├── data/words.ts            # The word list
+├── data/
+│   ├── oxford.json          # Oxford 3000/5000 words (generated)
+│   └── words.ts             # Turns them into cards
 ├── lib/
 │   ├── store.ts             # Saved state (localStorage) and actions that change it
 │   └── stats.ts             # Counts, streak, session building
@@ -52,11 +55,13 @@ src/
 ├── styles/
 │   └── globals.scss         # Tailwind layers and global styles
 └── types.ts                 # Shared types (CardData, props)
+scripts/
+└── import-oxford.mjs        # Builds src/data/oxford.json
 ```
 
 ## How it works
 
-- **Cards** are defined in [`src/data/words.ts`](src/data/words.ts) as `{ id, image, text }` objects and passed to `<SwipeableCards data={...} />`.
+- **Cards** are `{ id, text, pos, level, image }` objects from [`src/data/words.ts`](src/data/words.ts), passed to `<SwipeableCards data={...} />`. The picture is a random [picsum](https://picsum.photos/) photo seeded by the word id, so it stays the same for a word but has nothing to do with it.
 - **The deck** is a queue; the top three cards are shown as a stack. Swiping right ("know") removes the word. Swiping left ("again") puts it back three cards later (`REQUEUE_GAP` in [`SwipeableCards.tsx`](src/components/SwipeableCards.tsx)). When the queue is empty, a "Start over" button appears.
 - **A swipe counts** when the drag distance plus a bit of the release speed passes 120px (`SWIPE_THRESHOLD` and `VELOCITY_WEIGHT` in [`Card.tsx`](src/components/Card.tsx)), so a short fast flick also works. Otherwise the card springs back. Touch and mouse both work.
 - **Buttons and keys:** ✕ / ← and ✓ / → swipe the top card with the same animation; ↺, Backspace or Ctrl/Cmd+Z undo the last swipe.
@@ -65,12 +70,18 @@ src/
 - **Sessions** take the words still being learned first, then new ones, up to the session size from settings. Known words are skipped.
 - **Account** (`/account`) shows progress (counts, today vs. daily goal, streak, last 7 days), the word list with filters and manual status changes, settings (session size, repeat gap, shuffle, reset progress) and the profile (name, avatar, level, daily goal).
 
-### Adding words
+### Word list
 
-Add an entry to `WORDS` in [`src/data/words.ts`](src/data/words.ts). Keep ids stable: progress is stored by id. Images are loaded through `next/image`, so any new image host must be allowed in `images.remotePatterns` in [`next.config.js`](next.config.js). Only `picsum.photos` is allowed at the moment.
+The words are the [Oxford 3000 and 5000](https://www.oxfordlearnersdictionaries.com/wordlists/oxford3000-5000) lists: 5975 entries, each one headword with one part of speech and a CEFR level from A1 to C1. To rebuild [`src/data/oxford.json`](src/data/oxford.json), run `npm run import:oxford` (it downloads the list page) or `npm run import:oxford -- page.html` with a saved copy.
+
+Progress is stored by id, so ids must stay stable. An id is the Oxford entry link plus the part of speech (`abandon_1-verb`, `lie1_1-verb`, `lie2_1-verb`), because one entry can cover several parts of speech and one word can have several entries.
+
+The lists belong to Oxford University Press. They are fine for a prototype; before publishing the app, get permission or switch to an open list such as the CEFR-J Wordlist.
+
+Images are loaded through `next/image`, so any new image host must be allowed in `images.remotePatterns` in [`next.config.js`](next.config.js). Only `picsum.photos` is allowed at the moment.
 
 ## Roadmap
 
 - Show the translation or meaning of a word (e.g. flip the card on tap)
 - Sign-in and syncing progress between devices
-- Load words from a data file or an API instead of hard-coding them
+- Pictures that match the word
