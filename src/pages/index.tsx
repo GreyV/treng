@@ -4,7 +4,7 @@ import Link from "next/link";
 
 import SwipeableCards, { MAX_HISTORY } from "@/components/SwipeableCards";
 import { WORDS } from "@/data/words";
-import { buildSession, countByStatus, streak, today } from "@/lib/stats";
+import { buildSession, countByStatus, newWordsFor, streak, today } from "@/lib/stats";
 import { WordProgress, getAppState, recordAnswer, revertAnswer, useAppState, useHydrated } from "@/lib/store";
 
 import { CardData, SwipeDirection } from "@/types";
@@ -24,13 +24,13 @@ export default function IndexPage() {
   // Build the session once saved progress is known. It must not follow every
   // progress change, or each swipe would start a new deck.
   if (hydrated && session === null) {
-    setSession({ id: 1, words: buildSession(WORDS, state.progress, state.settings) });
+    setSession({ id: 1, words: buildSession(WORDS, state.progress, state.settings, state.profile.level) });
   }
 
   const startSession = () => {
-    const { progress, settings } = getAppState();
+    const { progress, settings, profile } = getAppState();
     undoStack.current = [];
-    setSession((prev) => ({ id: (prev?.id ?? 0) + 1, words: buildSession(WORDS, progress, settings) }));
+    setSession((prev) => ({ id: (prev?.id ?? 0) + 1, words: buildSession(WORDS, progress, settings, profile.level) }));
   };
 
   const answer = (id: string, known: boolean) => {
@@ -45,7 +45,9 @@ export default function IndexPage() {
   const day = today(state.activity);
   const goal = state.profile.dailyGoal;
   const days = streak(state.activity);
-  const remaining = WORDS.length - countByStatus(WORDS, state.progress).known;
+  // Words still to learn at the learner's level; easier new words are not counted.
+  const remaining =
+    countByStatus(WORDS, state.progress).learning + newWordsFor(WORDS, state.progress, state.profile.level).length;
 
   const sessionDone = (
     <div className="flex h-full flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-gray-300 p-6 text-center dark:border-slate-600">
@@ -53,7 +55,7 @@ export default function IndexPage() {
       <p className="text-gray-500 dark:text-gray-400">
         {remaining > 0
           ? `${remaining} ${remaining === 1 ? "word" : "words"} left to learn.`
-          : "You know all the words. You can reset them in your account."}
+          : "You know all the words at your level. You can change the level or reset words in your account."}
       </p>
       <div className="mt-2 flex flex-wrap justify-center gap-3">
         {remaining > 0 && (

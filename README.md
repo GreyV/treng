@@ -67,7 +67,7 @@ scripts/
 - **Buttons and keys:** ✕ / ← and ✓ / → swipe the top card with the same animation; ↺, Backspace or Ctrl/Cmd+Z undo the last swipe.
 - **Callbacks:** `onSwipeLeft(id)` and `onSwipeRight(id)` on `SwipeableCards` receive the id of the swiped card. Undo calls `onUndo(id, dir)`.
 - **Progress** is saved in `localStorage` under `treng:v1` ([`src/lib/store.ts`](src/lib/store.ts)); there is no login, so it stays in one browser. Each swipe updates the word's status (new → learning → known) and today's counts; undo reverts both.
-- **Sessions** take the words still being learned first, then new ones, up to the session size from settings. Known words are skipped.
+- **Sessions** take the words still being learned first, then new ones, up to the session size from settings. New words start at the English level from the profile and go up, easiest level first; easier words are skipped as most likely known (a C2 learner gets C1 words, the hardest in the list). Known words are skipped.
 - **Account** (`/account`) shows progress (counts, today vs. daily goal, streak, last 7 days), the word list with filters and manual status changes, settings (session size, repeat gap, shuffle, reset progress) and the profile (name, avatar, level, daily goal).
 
 ### Word list

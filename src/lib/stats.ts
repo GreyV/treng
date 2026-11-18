@@ -1,5 +1,5 @@
 // Numbers derived from the saved state, for the learning page and the account page.
-import { AppState, DayActivity, Settings, WordProgress, WordStatus, dayKey } from "@/lib/store";
+import { AppState, DayActivity, LEVELS, Level, Settings, WordProgress, WordStatus, dayKey } from "@/lib/store";
 
 import { CardData } from "@/types";
 
@@ -63,14 +63,29 @@ function shuffled<T>(items: T[]): T[] {
   return result;
 }
 
+const levelRank = (level: Level) => LEVELS.indexOf(level);
+
+// The word lists stop at C1, so a C2 learner gets C1 words.
+const HARDEST_WORD_LEVEL: Level = "C1";
+
+/**
+ * New words for a learner at `level`: words of that level and harder.
+ * Easier words are skipped as most likely known.
+ */
+export function newWordsFor(words: CardData[], progress: Record<string, WordProgress>, level: Level) {
+  const from = Math.min(levelRank(level), levelRank(HARDEST_WORD_LEVEL));
+  return words.filter((w) => statusOf(progress, w.id) === "new" && levelRank(w.level) >= from);
+}
+
 /**
  * Words for one learning session: words being learned first (most missed first),
- * then new ones. Known words are left out.
+ * then new ones from the learner's level up, easiest level first. Known words are left out.
  */
 export function buildSession(
   words: CardData[],
   progress: Record<string, WordProgress>,
   settings: Settings,
+  level: Level,
 ): CardData[] {
   const learning = words
     .filter((w) => statusOf(progress, w.id) === "learning")
@@ -79,8 +94,12 @@ export function buildSession(
       const pb = progress[b.id];
       return pb.wrong - pb.correct - (pa.wrong - pa.correct) || pa.lastSeen - pb.lastSeen;
     });
-  const fresh = words.filter((w) => statusOf(progress, w.id) === "new");
+  const fresh = newWordsFor(words, progress, level);
+  // The sort is stable, so shuffled words stay shuffled within each level.
+  const ordered = (settings.shuffle ? shuffled(fresh) : fresh).sort(
+    (a, b) => levelRank(a.level) - levelRank(b.level),
+  );
 
-  const session = [...learning, ...(settings.shuffle ? shuffled(fresh) : fresh)];
+  const session = [...learning, ...ordered];
   return settings.sessionSize > 0 ? session.slice(0, settings.sessionSize) : session;
 }
