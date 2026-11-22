@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { Field, Panel, Segmented } from "@/components/account/ui";
-import { resetProgress, updateSettings, useAppState } from "@/lib/store";
+import { newShuffleSeed, resetProgress, updateSettings, useAppState } from "@/lib/store";
 
 const SettingsTab = () => {
   const { settings } = useAppState();
@@ -46,15 +46,26 @@ const SettingsTab = () => {
           </Field>
 
           <Field label="Order of new words">
-            <label className="flex cursor-pointer items-center gap-2">
-              <input
-                type="checkbox"
-                checked={settings.shuffle}
-                onChange={(e) => updateSettings({ shuffle: e.target.checked })}
-                className="h-4 w-4 accent-cyan-600"
-              />
-              Shuffle
-            </label>
+            <div className="flex items-center gap-3">
+              <label className="flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={settings.shuffle}
+                  onChange={(e) => updateSettings({ shuffle: e.target.checked })}
+                  className="h-4 w-4 accent-cyan-600"
+                />
+                Shuffle
+              </label>
+              {settings.shuffle && (
+                <button
+                  type="button"
+                  onClick={() => updateSettings({ shuffleSeed: newShuffleSeed() })}
+                  className="rounded-md border border-gray-300 px-2 py-1 text-xs font-medium hover:bg-black/5 dark:border-slate-600 dark:hover:bg-white/10"
+                >
+                  New order
+                </button>
+              )}
+            </div>
           </Field>
         </div>
       </Panel>

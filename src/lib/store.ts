@@ -30,6 +30,8 @@ export interface Settings {
   requeueGap: number;
   /** Show new words in random order instead of list order. */
   shuffle: boolean;
+  /** Fixes the random order, so it stays the same between sessions. Set on first load. */
+  shuffleSeed: number;
 }
 
 export interface DayActivity {
@@ -52,7 +54,8 @@ const STORAGE_KEY = "treng:v1";
 export const DEFAULT_STATE: AppState = {
   version: 1,
   profile: { name: "", avatar: "🙂", level: "A2", dailyGoal: 10 },
-  settings: { sessionSize: 10, requeueGap: 3, shuffle: false },
+  // The seed is 0 only until the saved state is loaded in the browser.
+  settings: { sessionSize: 10, requeueGap: 3, shuffle: true, shuffleSeed: 0 },
   progress: {},
   activity: {},
 };
@@ -61,7 +64,10 @@ let state: AppState = DEFAULT_STATE;
 let loaded = false;
 const listeners = new Set<() => void>();
 
-function load(): AppState {
+/** A random non-zero 32-bit seed for the order of new words. */
+export const newShuffleSeed = () => Math.floor(Math.random() * 0xffffffff) + 1;
+
+function readSaved(): AppState {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (!raw) return DEFAULT_STATE;
@@ -78,6 +84,24 @@ function load(): AppState {
   } catch {
     return DEFAULT_STATE;
   }
+}
+
+function save(next: AppState) {
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+  } catch {
+    // Storage is full or blocked (private mode): keep working in memory.
+  }
+}
+
+function load(): AppState {
+  const loadedState = readSaved();
+  if (loadedState.settings.shuffleSeed) return loadedState;
+  // First visit, or data saved before the seed existed: pick one and keep it,
+  // or the order of new words would change on every reload.
+  const withSeed = { ...loadedState, settings: { ...loadedState.settings, shuffleSeed: newShuffleSeed() } };
+  save(withSeed);
+  return withSeed;
 }
 
 function getSnapshot(): AppState {
@@ -110,11 +134,7 @@ function subscribe(listener: () => void) {
 
 function setState(update: (prev: AppState) => AppState) {
   state = update(getSnapshot());
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch {
-    // Storage is full or blocked (private mode): keep working in memory.
-  }
+  save(state);
   emit();
 }
 

@@ -54,13 +54,19 @@ export function lastDays(activity: AppState["activity"], n: number) {
   });
 }
 
-function shuffled<T>(items: T[]): T[] {
-  const result = [...items];
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
+/**
+ * A pseudo-random 32-bit number for a word, fixed by the seed (FNV-1a, then a
+ * MurmurHash3 finalizer to spread the bits). Sorting by it shuffles the words,
+ * and a word keeps its place when other words are learned or added.
+ */
+function shuffleKey(seed: number, id: string): number {
+  let h = (0x811c9dc5 ^ seed) >>> 0;
+  for (let i = 0; i < id.length; i++) {
+    h = Math.imul(h ^ id.charCodeAt(i), 0x01000193);
   }
-  return result;
+  h = Math.imul(h ^ (h >>> 16), 0x85ebca6b);
+  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
+  return (h ^ (h >>> 16)) >>> 0;
 }
 
 const levelRank = (level: Level) => LEVELS.indexOf(level);
@@ -79,7 +85,9 @@ export function newWordsFor(words: CardData[], progress: Record<string, WordProg
 
 /**
  * Words for one learning session: words being learned first (most missed first),
- * then new ones from the learner's level up, easiest level first. Known words are left out.
+ * then new ones from the learner's level up, easiest level first. Within a level
+ * new words are in list order, or shuffled by the seed from settings, so the
+ * order is the same in every session. Known words are left out.
  */
 export function buildSession(
   words: CardData[],
@@ -95,9 +103,10 @@ export function buildSession(
       return pb.wrong - pb.correct - (pa.wrong - pa.correct) || pa.lastSeen - pb.lastSeen;
     });
   const fresh = newWordsFor(words, progress, level);
-  // The sort is stable, so shuffled words stay shuffled within each level.
-  const ordered = (settings.shuffle ? shuffled(fresh) : fresh).sort(
-    (a, b) => levelRank(a.level) - levelRank(b.level),
+  const keys = new Map(fresh.map((w) => [w.id, settings.shuffle ? shuffleKey(settings.shuffleSeed, w.id) : 0]));
+  // The sort is stable: with shuffle off, words keep list order within a level.
+  const ordered = fresh.sort(
+    (a, b) => levelRank(a.level) - levelRank(b.level) || keys.get(a.id)! - keys.get(b.id)!,
   );
 
   const session = [...learning, ...ordered];
