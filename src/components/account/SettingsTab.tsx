@@ -6,6 +6,8 @@ import { newShuffleSeed, resetProgress, updateSettings, useAppState } from "@/li
 const SettingsTab = () => {
   const { settings } = useAppState();
   const [confirmReset, setConfirmReset] = useState(false);
+  // Shows that "New order" worked: the order itself is only seen on the cards.
+  const [reshuffled, setReshuffled] = useState(false);
 
   return (
     <div className="flex flex-col gap-4">
@@ -45,25 +47,44 @@ const SettingsTab = () => {
             </div>
           </Field>
 
-          <Field label="Order of new words">
+          <Field
+            label="Order of new words"
+            hint={
+              reshuffled
+                ? "New order picked. The next session starts with it."
+                : settings.shuffle
+                  ? "Random, but the same in every session until you pick a new order."
+                  : "In list (alphabetical) order."
+            }
+          >
             <div className="flex items-center gap-3">
               <label className="flex cursor-pointer items-center gap-2">
                 <input
                   type="checkbox"
                   checked={settings.shuffle}
-                  onChange={(e) => updateSettings({ shuffle: e.target.checked })}
+                  onChange={(e) => {
+                    updateSettings({ shuffle: e.target.checked });
+                    setReshuffled(false);
+                  }}
                   className="h-4 w-4 accent-cyan-600"
                 />
                 Shuffle
               </label>
+              <button
+                type="button"
+                onClick={() => {
+                  // Picking a new order only makes sense with shuffle on.
+                  updateSettings({ shuffle: true, shuffleSeed: newShuffleSeed() });
+                  setReshuffled(true);
+                }}
+                className="rounded-md border border-gray-300 px-2 py-1 text-xs font-medium hover:bg-black/5 dark:border-slate-600 dark:hover:bg-white/10"
+              >
+                🔀 New order
+              </button>
               {settings.shuffle && (
-                <button
-                  type="button"
-                  onClick={() => updateSettings({ shuffleSeed: newShuffleSeed() })}
-                  className="rounded-md border border-gray-300 px-2 py-1 text-xs font-medium hover:bg-black/5 dark:border-slate-600 dark:hover:bg-white/10"
-                >
-                  New order
-                </button>
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  Seed: <span className="font-mono text-gray-900 dark:text-gray-100">{settings.shuffleSeed}</span>
+                </span>
               )}
             </div>
           </Field>

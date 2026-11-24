@@ -98,8 +98,12 @@ function load(): AppState {
   const loadedState = readSaved();
   if (loadedState.settings.shuffleSeed) return loadedState;
   // First visit, or data saved before the seed existed: pick one and keep it,
-  // or the order of new words would change on every reload.
-  const withSeed = { ...loadedState, settings: { ...loadedState.settings, shuffleSeed: newShuffleSeed() } };
+  // or the order of new words would change on every reload. Older data also
+  // saved shuffle as off, the default then, so turn it on like for new users.
+  const withSeed = {
+    ...loadedState,
+    settings: { ...loadedState.settings, shuffle: true, shuffleSeed: newShuffleSeed() },
+  };
   save(withSeed);
   return withSeed;
 }
