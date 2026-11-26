@@ -1,0 +1,71 @@
+#!/usr/bin/env node
+// Checks the commit message format described in CLAUDE.md.
+const fs = require('fs')
+
+const file = process.argv[2]
+const raw = fs.readFileSync(file, 'utf8')
+
+// Git runs this hook before stripping comments, so drop them here,
+// along with the diff that `git commit -v` adds below the scissors line.
+const lines = []
+for (const line of raw.split('\n')) {
+  if (/^# -+ >8 -+$/.test(line)) break
+  if (line.startsWith('#')) continue
+  lines.push(line.replace(/\s+$/, ''))
+}
+while (lines.length && lines[0] === '') lines.shift()
+while (lines.length && lines[lines.length - 1] === '') lines.pop()
+
+const subject = lines[0] ?? ''
+if (/^(Merge |Revert "|fixup! |squash! |amend! )/.test(subject)) process.exit(0)
+
+const errors = []
+const types = ['feat', 'fix', 'refactor', 'perf', 'docs', 'style', 'test', 'build', 'ci', 'chore']
+const notImperative = {
+  ed: ['embed', 'feed', 'need', 'seed', 'shed', 'shred', 'speed'],
+  ing: ['bring', 'ring', 'string'],
+}
+// A first word with a capital inside, a dot or a digit is a name, like
+// "Next.js", "ESLint" or "README", and may keep its capital letter.
+const isName = (word) => /^.+[A-Z.\d]/.test(word)
+
+const header = subject.match(/^(\w+)(?:\(([^)]*)\))?(!)?: (.*)$/)
+if (!subject) errors.push('The message is empty.')
+else if (!header)
+  errors.push(`Write the subject as "type(scope): description", like "feat(deck): add undo".`)
+else {
+  const [, type, scope, , description] = header
+  const firstWord = description.split(/\s+/)[0]
+  if (!types.includes(type))
+    errors.push(`Unknown type "${type}"; use one of: ${types.join(', ')}.`)
+  if (scope !== undefined && !/^[a-z0-9-]+$/.test(scope))
+    errors.push(`Write the scope in lowercase letters, digits and dashes, like "deck" or "word-list".`)
+  if (subject.length > 72)
+    errors.push(`The subject is ${subject.length} characters; keep it to 72 (ideally 50).`)
+  if (!description.trim()) errors.push('Add a description after the colon.')
+  if (/^[A-Z]/.test(description) && !isName(firstWord))
+    errors.push(`Start the description with a lowercase letter: "${type}: add", not "${type}: Add".`)
+  if (/[.!?;:,]$/.test(description)) errors.push('Drop the punctuation at the end of the subject.')
+  for (const [ending, allowed] of Object.entries(notImperative)) {
+    const word = firstWord.toLowerCase()
+    if (word.endsWith(ending) && !allowed.includes(word))
+      errors.push(`Use the imperative mood: "add", not "${firstWord}".`)
+  }
+}
+
+if (lines.length > 1 && lines[1] !== '')
+  errors.push('Leave a blank line between the subject and the body.')
+
+lines.slice(1).forEach((line, i) => {
+  if (line.length > 72 && !line.includes('://'))
+    errors.push(`Line ${i + 2} is ${line.length} characters; wrap the body at 72.`)
+  if (/^co-authored-by:.*(claude|anthropic)/i.test(line) || /generated with .*claude/i.test(line))
+    errors.push(`Line ${i + 2}: no Claude attribution in commits.`)
+})
+
+if (errors.length) {
+  console.error('Commit message does not follow the rules in CLAUDE.md:')
+  for (const e of errors) console.error(`  - ${e}`)
+  console.error(`\nThe message is saved in ${file}; fix it and commit again.`)
+  process.exit(1)
+}

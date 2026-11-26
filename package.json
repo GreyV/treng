@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "import:oxford": "node scripts/import-oxford.mjs"
+    "import:oxford": "node scripts/import-oxford.mjs",
+    "prepare": "git config core.hooksPath .githooks"
   },
   "dependencies": {
     "motion": "^14.14.0",
